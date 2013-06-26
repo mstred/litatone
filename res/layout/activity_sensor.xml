@@ -9,8 +9,18 @@
     tools:context=".Sensor" >
 
     <TextView
+        android:id="@+id/hello"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/hello_world" />
+
+    <Switch
+        android:id="@+id/switch1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/hello"
+        android:layout_alignBottom="@+id/hello"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="26dp" />
 
 </RelativeLayout>
