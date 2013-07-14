@@ -27,7 +27,7 @@ public class Sensor extends Activity implements SensorEventListener {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_sensor);
-		toneGen = new ToneGenerator(AudioManager.STREAM_DTMF, 100);
+		toneGen = new ToneGenerator(AudioManager.STREAM_SYSTEM, 100);
 		text = (TextView) findViewById(R.id.text);
 		swth = (Switch) findViewById(R.id.sensor_switch);
 		swth.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
