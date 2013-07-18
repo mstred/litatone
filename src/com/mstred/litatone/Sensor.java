@@ -7,7 +7,9 @@ import android.content.Context;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.AudioFormat;
 import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.view.Menu;
@@ -15,19 +17,27 @@ import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
 
+@SuppressWarnings("unused")
 public class Sensor extends Activity implements SensorEventListener {
 
+	private static final int DEFAULT_STREAM = AudioManager.STREAM_MUSIC;
+	
 	private android.hardware.Sensor lightSensor;
 	private SensorManager sensorManager;
 	private Switch swth;
 	private TextView text;
 	private ToneGenerator toneGen;
 	
+	private boolean running = true;
+	private static final int SAMPLE_RATE = 44100;
+	private Thread thread;
+	private float value;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_sensor);
-		toneGen = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+		toneGen = new ToneGenerator(DEFAULT_STREAM, 100);
 		text = (TextView) findViewById(R.id.text);
 		swth = (Switch) findViewById(R.id.sensor_switch);
 		swth.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -56,9 +66,26 @@ public class Sensor extends Activity implements SensorEventListener {
 
 	@Override
 	public void onSensorChanged(SensorEvent evt) {
-		int value = Math.round(evt.values[0] * 100);
+		value = Math.round(evt.values[0] * 100);
 		text.setText(MessageFormat.format("Light amount: {0} (lux * 100)", value));
-		toneGen.startTone(getToneTypeByLux(value));
+		
+		/* DTMF tone generation */
+		toneGen.startTone(getToneTypeByLux((int) value));
+		
+		/* PCM tone generation */
+		thread = new Thread() {
+			@Override
+			public void run() {
+				this.setPriority(MAX_PRIORITY);
+				int bufferSize = AudioTrack.getMinBufferSize(SAMPLE_RATE,
+	                AudioFormat.CHANNEL_OUT_DEFAULT, AudioFormat.ENCODING_DEFAULT);
+				AudioTrack aTrack = new AudioTrack(DEFAULT_STREAM, SAMPLE_RATE,
+					AudioFormat.CHANNEL_OUT_DEFAULT, AudioFormat.ENCODING_DEFAULT, 
+					bufferSize, AudioTrack.MODE_STREAM);
+				
+			}
+		};
+		thread.start();
 	}
 	
 	public int getToneTypeByLux(int value) {
