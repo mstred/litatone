@@ -17,7 +17,7 @@ import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
 
-@SuppressWarnings("unused")
+//@SuppressWarnings("unused")
 public class Sensor extends Activity implements SensorEventListener {
 
 	private static final int DEFAULT_STREAM = AudioManager.STREAM_MUSIC;
@@ -28,9 +28,11 @@ public class Sensor extends Activity implements SensorEventListener {
 	private TextView text;
 	private ToneGenerator toneGen;
 	
-	private boolean running = true;
+	private boolean itRuns = true;
 	private static final int SAMPLE_RATE = 44100;
 	private Thread thread;
+	private AudioTrack track;
+	private int bufferSize;
 	private float value;
 	
 	@Override
@@ -70,22 +72,40 @@ public class Sensor extends Activity implements SensorEventListener {
 		text.setText(MessageFormat.format("Light amount: {0} (lux * 100)", value));
 		
 		/* DTMF tone generation */
-		toneGen.startTone(getToneTypeByLux((int) value));
+		//toneGen.startTone(getToneTypeByLux((int) value));
 		
 		/* PCM tone generation */
 		thread = new Thread() {
 			@Override
 			public void run() {
 				this.setPriority(MAX_PRIORITY);
-				int bufferSize = AudioTrack.getMinBufferSize(SAMPLE_RATE,
-	                AudioFormat.CHANNEL_OUT_DEFAULT, AudioFormat.ENCODING_DEFAULT);
-				AudioTrack aTrack = new AudioTrack(DEFAULT_STREAM, SAMPLE_RATE,
-					AudioFormat.CHANNEL_OUT_DEFAULT, AudioFormat.ENCODING_DEFAULT, 
+				bufferSize = AudioTrack.getMinBufferSize(SAMPLE_RATE,
+	                AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+				track = new AudioTrack(DEFAULT_STREAM, SAMPLE_RATE,
+					AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, 
 					bufferSize, AudioTrack.MODE_STREAM);
-				
+				writeAudioTrack(bufferSize, track);
+				track.stop();
+				track.release();
 			}
 		};
 		thread.start();
+	}
+	
+	public synchronized void writeAudioTrack(int bufferSize, AudioTrack track) {
+		short samples[] = new short[bufferSize];
+		double frequency = 440.0;
+		double fac = 0.0;
+
+		track.play();
+		do {
+			frequency = 440 + 440 * value;
+			for (int i = 0; i < bufferSize; i++) {
+				samples[i] = (short) (10000 * Math.sin(fac));
+				fac += 8.0 * Math.atan(1.0) * frequency / SAMPLE_RATE;
+			}
+			track.write(samples, 0, bufferSize);
+		} while (itRuns);
 	}
 	
 	public int getToneTypeByLux(int value) {
