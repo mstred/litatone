@@ -139,5 +139,7 @@ public class Sensor extends Activity implements SensorEventListener {
 		super.onPause();
 		sensorManager.unregisterListener(this);
 		toneGen.stopTone();
+		track.stop();
+		track.release();
 	}
 }
